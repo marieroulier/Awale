@@ -7,7 +7,7 @@ DEBUG_FLAGS = -g
 PERF_FLAGS = -DPERF
 BUILD_PATH = ./build
 BIN_PATH = ./bin
-OBJETS = client.o server.o
+OBJETS = client.o server.o gameLogic.o
 OBJETS_PATH = $(addprefix $(BUILD_PATH)/, $(OBJETS))
 SRC_PATH = ./src
 CLIENT_PATH = $(SRC_PATH)/client
@@ -25,4 +25,4 @@ $(GAME_EXE): $(SERVER_PATH)/gameLogic.c # $(OBJETS_PATH)
 
 
 clean:
-	rm $(BIN_PATH)/$(SERVER_EXE) $(BIN_PATH)/$(CLIENT_EXE) $(OBJETS_PATH)
+	rm $(BIN_PATH)/$(SERVER_EXE) $(BIN_PATH)/$(CLIENT_EXE) $(BIN_PATH)/$(GAME_EXE) $(OBJETS_PATH)
