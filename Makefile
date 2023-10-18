@@ -8,8 +8,9 @@ BUILD_PATH = ./build
 BIN_PATH = ./bin
 OBJETS = client.o server.o
 OBJETS_PATH = $(addprefix $(BUILD_PATH)/, $(OBJETS))
-CLIENT_PATH = ./client
-SERVER_PATH = ./server
+SRC_PATH = ./src
+CLIENT_PATH = $(SRC_PATH)/client
+SERVER_PATH = $(SRC_PATH)/server
 INCLUDE_PATH = -I ./interfaces
 
 $(SERVER_EXE): $(SERVER_PATH)/server.c # $(OBJETS_PATH)
