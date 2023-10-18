@@ -1,5 +1,6 @@
 SERVER_EXE = server
 CLIENT_EXE = client
+GAME_EXE = game
 COMPILER = gcc
 FLAGS = -c -ansi -pedantic -Wall # -Werror
 DEBUG_FLAGS = -g
@@ -19,8 +20,8 @@ $(SERVER_EXE): $(SERVER_PATH)/server.c # $(OBJETS_PATH)
 $(CLIENT_EXE): $(CLIENT_PATH)/client.c # $(OBJETS_PATH)
 	$(COMPILER) -o $(BIN_PATH)/$(CLIENT_EXE) $(CLIENT_PATH)/client.c $(INCLUDE_PATH)
 
-# $(TEST_EXE): $(CONTROLLER_PATH)/tester.cpp $(OBJETS_PATH)
-# 	$(COMPILER) -o $(BUILD_PATH)/$(TEST_EXE) $(CONTROLLER_PATH)/tester.cpp $(OBJETS_PATH) $(INCLUDE_PATH)
+$(GAME_EXE): $(SERVER_PATH)/gameLogic.c # $(OBJETS_PATH)
+	$(COMPILER) -o $(BIN_PATH)/$(GAME_EXE) $(SERVER_PATH)/gameLogic.c $(INCLUDE_PATH)
 
 
 clean:
