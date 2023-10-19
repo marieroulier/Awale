@@ -25,8 +25,8 @@ $(GAME_EXE): $(GAME_PATH)/game.c gameLogic.o display.o
 gameLogic.o: $(GAME_PATH)/gameLogic.c
 	$(COMPILER) -c -o $(BUILD_PATH)/gameLogic.o $(GAME_PATH)/gameLogic.c $(INCLUDE_PATH) $(DEBUG_FLAGS)
 
-display.o: $(SERVER_PATH)/display.c
-	$(COMPILER) -c -o $(BUILD_PATH)/display.o $(SERVER_PATH)/display.c $(INCLUDE_PATH) $(DEBUG_FLAGS)
+display.o: $(GAME_PATH)/display.c
+	$(COMPILER) -c -o $(BUILD_PATH)/display.o $(GAME_PATH)/display.c $(INCLUDE_PATH) $(DEBUG_FLAGS)
 
 
 clean:
