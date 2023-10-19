@@ -218,6 +218,55 @@ boolean check_starvation(Game *game, Player *player)
 void capture(Game *game, Pit startingPit)
 {
     boolean capture = FALSE;
+    int currentLine = startingPit.line;
+    int currentColumn = startingPit.column;
+    int seedsCollected = 0;
+
+    // Check if the starting pit is empty or has more than 3 seeds
+    if (game->board[currentLine][currentColumn] != 2 || game->board[currentLine][currentColumn] != 3)
+        return;
+
+    // Collect seeds and look at previous squares until conditions met
+    while (game->board[currentLine][currentColumn] == 2 || game->board[currentLine][currentColumn] == 3)
+    {
+        seedsCollected += game->board[currentLine][currentColumn];
+        game->board[currentLine][currentColumn] = 0;
+
+        // Move to the previous column in the opposing camp
+        if (currentLine == 0 && currentColumn > 0)
+        {
+            currentColumn--; // Move left on player 0's camp
+        }
+        else if (currentLine == 1 && currentColumn < 6)
+        {
+            currentColumn++; // Move right on player 1's camp
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    // Check if the opponent has seeds left in their camp
+    boolean opponentHasSeeds = FALSE;
+    for (int j = 0; j < 6; j++)
+    {
+        if (game->board[currentLine][j] > 0)
+        {
+            opponentHasSeeds = TRUE;
+            break;
+        }
+    }
+
+    // If the opponent has seeds, the capture is valid
+    if (opponentHasSeeds)
+    {
+        get_current_player(game).score = seedsCollected;
+    }
+
+
+    // ANCIEN CODE
+    /*boolean capture = FALSE;
     if (game->players[0] == game->turn)
     {
         if (startingPit.line == 0)
@@ -243,7 +292,7 @@ void capture(Game *game, Pit startingPit)
         }
     }
 
-    return TRUE;
+    return TRUE;*/
 }
 
 Player *get_winner(Game *game)
