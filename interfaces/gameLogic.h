@@ -1,7 +1,6 @@
 #ifndef GAME_LOGIC_H
 #define GAME_LOGIC_H
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include "clientServer.h"
@@ -9,9 +8,6 @@
 #define TRUE 1
 #define FALSE 0
 typedef int boolean;
-
-#define RED "\033[0;31m"
-#define RESET "\033[0m"
 
 typedef struct
 {
@@ -48,9 +44,6 @@ void free_player(Player *player);
 
 // Frees the memory allocated for the given game.
 void free_game(Game *game);
-
-// Prints the game board on stdout.
-void print_board(Game *game);
 
 // Returns the current player whose turn it is.
 Player *get_current_player(Game *game);
