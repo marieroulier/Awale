@@ -1,5 +1,4 @@
 #include "gameLogic.h"
-#include "display.h"
 
 Player *create_player()
 {
@@ -294,56 +293,4 @@ Player *get_winner(Game *game)
     {
         return NULL;
     }
-}
-
-int main()
-{
-    Player *player1 = create_player();
-    Player *player2 = create_player();
-    Game *game = new_game(player1, player2);
-    while (!is_game_over(game))
-    {
-        print_board(game);
-        Pit pit;
-        int caseNumber;
-        printf("\nJoueur %d, entrez le numéro de la case à jouer : ", game->turn == player1 ? 1 : 2);
-        scanf("%d", &caseNumber);
-        if (caseNumber < 0 || caseNumber > 11)
-        {
-            printf("Mouvement invalide\n");
-            continue;
-        }
-        else if (caseNumber <= 5)
-        {
-            pit.line = 0;
-            pit.column = caseNumber;
-        }
-        else if (caseNumber <= 11)
-        {
-            pit.line = 1;
-            pit.column = 11 - caseNumber;
-        }
-        if (is_valid_move(pit, game))
-        {
-            game = make_move(pit, game);
-        }
-        else
-        {
-            printf("Mouvement invalide\n");
-        }
-    }
-    print_board(game);
-    Player *winner = get_winner(game);
-    if (winner != NULL)
-    {
-        printf("Le joueur %d a gagné !\n", winner == game->players[0] ? 1 : 2);
-    }
-    else
-    {
-        printf("Match nul !\n");
-    }
-    free_game(game);
-    free_player(player1);
-    free_player(player2);
-    return 0;
 }
