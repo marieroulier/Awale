@@ -261,7 +261,7 @@ void capture(Game *game, Pit startingPit)
     // If the opponent has seeds, the capture is valid
     if (opponentHasSeeds)
     {
-        get_current_player(game).score = seedsCollected;
+        get_current_player(game)->score = seedsCollected;
     }
 
 
