@@ -40,6 +40,9 @@ Player *create_player_with_client(Client *client);
 // Initializes a new game with the given player names and returns a pointer to the game.
 Game *new_game(Player *player1, Player *player2);
 
+// Returns a copy of the given game.
+Game *copy_game(Game *game);
+
 // Frees the memory allocated for the given player.
 void free_player(Player *player);
 
@@ -64,8 +67,13 @@ void empty_seeds(Game *game, Player *player);
 // Returns true if the given move is valid for the current player, false otherwise.
 boolean is_valid_move(Pit pit, Game *game);
 
-// Executes the given move for the current player and returns the number of seeds captured.
-void make_move(Pit pit, Game *game);
+// Executes the given legal move for the current player.
+// Can change the game pointer.
+Game *make_move(Pit pit, Game *game);
+
+// Captures the seeds of the opponent if possible.
+// Can change the game pointer.
+Game *capture(Game *game, Pit pit);
 
 // Returns the player whose line is empty if there is, null otherwise.
 Player *player_line_empty(Game *game);
@@ -75,9 +83,6 @@ boolean is_game_over(Game *game);
 
 // Returns true if the given player can't be fed, false otherwise.
 boolean check_starvation(Game *game, Player *player);
-
-// Returns true if player can capture, false otherwise.
-void capture(Game *game, Pit pit);
 
 // Returns the winner of the game, or NULL if the game is not over or it is a tie.
 Player *get_winner(Game *game);

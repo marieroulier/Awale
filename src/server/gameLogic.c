@@ -36,6 +36,22 @@ Game *new_game(Player *player1, Player *player2)
     return game;
 }
 
+Game *copy_game(Game *game)
+{
+    Game *copy = (Game *)malloc(sizeof(Game));
+    copy->players[0] = game->players[0];
+    copy->players[1] = game->players[1];
+    copy->turn = game->turn;
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            copy->board[i][j] = game->board[i][j];
+        }
+    }
+    return copy;
+}
+
 void free_player(Player *player)
 {
     free(player);
@@ -102,7 +118,7 @@ boolean is_valid_move(Pit pit, Game *game)
     return TRUE;
 }
 
-void make_move(Pit pit, Game *game)
+Game *make_move(Pit pit, Game *game)
 {
     int seeds = get_seeds(pit, game);
     game->board[pit.line][pit.column] = 0;
@@ -139,8 +155,69 @@ void make_move(Pit pit, Game *game)
         game->board[line][column]++;
         seeds--;
     }
-    // TODO : implement logic of capture and starvation
+    game = capture(game, (Pit){line, column});
     game->turn = get_opponent(game->turn, game);
+    return game;
+}
+
+Game *capture(Game *game, Pit startingPit)
+{
+    boolean capture = FALSE;
+    int currentLine = startingPit.line;
+    int currentColumn = startingPit.column;
+    int seedsCollected = 0;
+
+    // Check if the starting pit is empty, or has 1 or more than 3 seeds, or the current player isn't in the opponent's line
+    if ((game->board[currentLine][currentColumn] != 2 && game->board[currentLine][currentColumn] != 3) || (game->turn == game->players[0] && currentLine == 0) || (game->turn == game->players[1] && currentLine == 1))
+        return game;
+
+    // Create a copy of the game where the seeds will be removed
+    Game *gameCopy = copy_game(game);
+
+    // Collect seeds and look at previous squares until conditions met
+    while (game->board[currentLine][currentColumn] == 2 || game->board[currentLine][currentColumn] == 3)
+    {
+        seedsCollected += game->board[currentLine][currentColumn];
+        gameCopy->board[currentLine][currentColumn] = 0;
+
+        // Move to the previous column in the opposing camp
+        if (currentLine == 0 && currentColumn > 0)
+        {
+            currentColumn--; // Move left on player 0's camp
+        }
+        else if (currentLine == 1 && currentColumn < 6)
+        {
+            currentColumn++; // Move right on player 1's camp
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // Check if the opponent has seeds left in their camp
+    boolean opponentHasSeeds = FALSE;
+    for (int j = 0; j < 6; j++)
+    {
+        if (gameCopy->board[currentLine][j] > 0)
+        {
+            opponentHasSeeds = TRUE;
+            break;
+        }
+    }
+
+    // If the opponent has seeds, the capture is valid
+    if (opponentHasSeeds)
+    {
+        free_game(game);
+        game = gameCopy;
+        game->turn->score += seedsCollected;
+    }
+    else
+    {
+        free_game(gameCopy);
+    }
+    return game;
 }
 
 Player *player_line_empty(Game *game)
@@ -214,38 +291,6 @@ boolean check_starvation(Game *game, Player *player)
     return FALSE;
 }
 
-// TODO
-void capture(Game *game, Pit startingPit)
-{
-    boolean capture = FALSE;
-    if (game->players[0] == game->turn)
-    {
-        if (startingPit.line == 0)
-            return;
-        for (int j = 0; j < 6; j++)
-        {
-            if (game->board[1][j] != 0 && game->board[1][j] != 2 && game->board[1][j] != 3)
-            {
-                return TRUE;
-            }
-        }
-    }
-    else
-    {
-        if (startingPit.line == 1)
-            return;
-        for (int j = 5; j >= 0; j--)
-        {
-            if (game->board[1][j] >= j + 1)
-            {
-                return FALSE;
-            }
-        }
-    }
-
-    return TRUE;
-}
-
 Player *get_winner(Game *game)
 {
     if (game->board[0][5] > game->board[1][5])
@@ -291,11 +336,25 @@ int main()
         }
         if (is_valid_move(pit, game))
         {
-            make_move(pit, game);
+            game = make_move(pit, game);
         }
         else
         {
             printf("Mouvement invalide\n");
         }
     }
+    print_board(game);
+    Player *winner = get_winner(game);
+    if (winner != NULL)
+    {
+        printf("Le joueur %d a gagné !\n", winner == game->players[0] ? 1 : 2);
+    }
+    else
+    {
+        printf("Match nul !\n");
+    }
+    free_game(game);
+    free_player(player1);
+    free_player(player2);
+    return 0;
 }
