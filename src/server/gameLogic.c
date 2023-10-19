@@ -263,36 +263,6 @@ void capture(Game *game, Pit startingPit)
     {
         get_current_player(game)->score = seedsCollected;
     }
-
-
-    // ANCIEN CODE
-    /*boolean capture = FALSE;
-    if (game->players[0] == game->turn)
-    {
-        if (startingPit.line == 0)
-            return;
-        for (int j = 0; j < 6; j++)
-        {
-            if (game->board[1][j] != 0 && game->board[1][j] != 2 && game->board[1][j] != 3)
-            {
-                return TRUE;
-            }
-        }
-    }
-    else
-    {
-        if (startingPit.line == 1)
-            return;
-        for (int j = 5; j >= 0; j--)
-        {
-            if (game->board[1][j] >= j + 1)
-            {
-                return FALSE;
-            }
-        }
-    }
-
-    return TRUE;*/
 }
 
 Player *get_winner(Game *game)
