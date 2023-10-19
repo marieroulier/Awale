@@ -26,11 +26,11 @@ void playGame(Game *game)
         print_board(game);
         Pit pit;
         int caseNumber;
-        printf("\nJoueur %d, entrez le numéro de la case à jouer : ", game->turn == game->players[0] ? 1 : 2);
+        printf("\nPlayer %d, enter the pit in which you want to play : ", game->turn == game->players[0] ? 1 : 2);
         scanf("%d", &caseNumber);
         if (caseNumber < 0 || caseNumber > 11)
         {
-            printf("Mouvement invalide\n");
+            printf("Invalid move\n");
             continue;
         }
         else if (caseNumber <= 5)
@@ -49,18 +49,18 @@ void playGame(Game *game)
         }
         else
         {
-            printf("Mouvement invalide\n");
+            printf("Invalid move\n");
         }
     }
     print_board(game);
     Player *winner = get_winner(game);
     if (winner != NULL)
     {
-        printf("Le joueur %d a gagné !\n", winner == game->players[0] ? 1 : 2);
+        printf("Player %d won !\n", winner == game->players[0] ? 1 : 2);
     }
     else
     {
-        printf("Match nul !\n");
+        printf("Tie !\n");
     }
 }
 
