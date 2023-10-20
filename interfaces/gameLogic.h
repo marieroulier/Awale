@@ -12,6 +12,7 @@ typedef int boolean;
 typedef struct
 {
     int score;
+    boolean tie;
 } Player;
 
 typedef struct Game
