@@ -2,8 +2,9 @@
 
 Player *create_player()
 {
-    Player *player = malloc(sizeof(Player));
+    Player *player = (Player *)malloc(sizeof(Player));
     player->score = 0;
+    player->tie = FALSE;
     return player;
 }
 
@@ -17,7 +18,7 @@ Player *create_player_with_client(Client *client)
 
 Game *new_game(Player *player1, Player *player2)
 {
-    Game *game = malloc(sizeof(Game));
+    Game *game = (Game *)malloc(sizeof(Game));
 
     game->players[0] = player1;
     game->players[1] = player2;
@@ -245,12 +246,11 @@ boolean is_game_over(Game *game)
             return TRUE;
         }
     }
-    // if it is not possible to capture seeds
-    // TODO : change check_capture call
-    // else if (check_capture(game))
-    // {
-    //     return TRUE;
-    // }
+    // if it is not possible to capture seeds <-> players tie the game together
+    else if (game->players[0]->tie && game->players[1]->tie)
+    {
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -279,18 +279,24 @@ boolean check_starvation(Game *game, Player *player)
     return FALSE;
 }
 
+void tie(Game *game)
+{
+    game->players[0]->tie = game->turn == game->players[0] ? TRUE : game->players[0]->tie;
+    game->players[1]->tie = game->turn == game->players[1] ? TRUE : game->players[1]->tie;
+}
+
 Player *get_winner(Game *game)
 {
-    if (game->board[0][5] > game->board[1][5])
+    if (game->players[0]->tie && game->players[1]->tie || game->players[0]->score == game->players[1]->score)
+    {
+        return NULL;
+    }
+    else if (game->players[0]->score > game->players[1]->score)
     {
         return game->players[0];
     }
-    else if (game->board[0][5] < game->board[1][5])
-    {
-        return game->players[1];
-    }
     else
     {
-        return NULL;
+        return game->players[1];
     }
 }
