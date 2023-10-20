@@ -2,7 +2,7 @@
 
 Player *create_player()
 {
-    Player *player = malloc(sizeof(Player));
+    Player *player = (Player *)malloc(sizeof(Player));
     player->score = 0;
     player->tie = FALSE;
     return player;
@@ -18,7 +18,7 @@ Player *create_player_with_client(Client *client)
 
 Game *new_game(Player *player1, Player *player2)
 {
-    Game *game = malloc(sizeof(Game));
+    Game *game = (Game *)malloc(sizeof(Game));
 
     game->players[0] = player1;
     game->players[1] = player2;
@@ -281,7 +281,8 @@ boolean check_starvation(Game *game, Player *player)
 
 void tie(Game *game)
 {
-    game->turn = NULL;
+    game->players[0]->tie = game->turn == game->players[0] ? TRUE : game->players[0]->tie;
+    game->players[1]->tie = game->turn == game->players[1] ? TRUE : game->players[1]->tie;
 }
 
 Player *get_winner(Game *game)

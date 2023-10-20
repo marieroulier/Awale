@@ -19,7 +19,7 @@ void manual_fill_board(Game *game)
 }
 
 // Play the game
-void playGame(Game *game)
+Game *playGame(Game *game)
 {
     while (!is_game_over(game))
     {
@@ -30,8 +30,7 @@ void playGame(Game *game)
         scanf("%d", &caseNumber);
         if (caseNumber < 0 || caseNumber > 11)
         {
-            game->players[0]->tie = game->turn == game->players[0] ? TRUE : game->players[0]->tie;
-            game->players[1]->tie = game->turn == game->players[1] ? TRUE : game->players[1]->tie;
+            tie(game);
             game->turn = get_opponent(game->turn, game);
             continue;
         }
@@ -65,6 +64,7 @@ void playGame(Game *game)
     {
         printf("Tie !\n");
     }
+    return game;
 }
 
 int main()
@@ -87,7 +87,7 @@ int main()
         manual_fill_board(game);
     }
 
-    playGame(game);
+    game = playGame(game);
 
     free_game(game);
     free_player(player1);

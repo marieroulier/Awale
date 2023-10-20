@@ -78,6 +78,9 @@ boolean is_game_over(Game *game);
 // Returns true if the given player can't be fed, false otherwise.
 boolean check_starvation(Game *game, Player *player);
 
+// Put the current player to wanting to tie.
+void tie(Game *game);
+
 // Returns the winner of the game, or NULL if the game is not over or it is a tie.
 Player *get_winner(Game *game);
 
