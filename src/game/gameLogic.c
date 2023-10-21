@@ -248,13 +248,10 @@ boolean is_game_over(Game *game)
         return TRUE;
     }
     // if one player has no seeds left on his line and the next player can't feed him
-    else if ((player = player_line_empty(game)) != NULL)
+    else if ((player = player_line_empty(game)) != NULL && check_starvation(game, player))
     {
-        if (check_starvation(game, player))
-        {
-            empty_seeds(game, get_opponent(player, game));
-            return TRUE;
-        }
+        empty_seeds(game, get_opponent(player, game));
+        return TRUE;
     }
     // if it is not possible to capture seeds <-> players tie the game together
     else if (game->players[0]->tie && game->players[1]->tie)
