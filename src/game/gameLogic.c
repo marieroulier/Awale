@@ -97,12 +97,22 @@ void empty_seeds(Game *game, Player *player)
     }
 }
 
-// TODO : saves the opponent from starving if you can
 boolean is_valid_move(Pit pit, Game *game)
 {
     if (pit.line < 0 || pit.line > 1 || pit.column < 0 || pit.column > 5 || get_seeds(pit, game) == 0 || (game->turn == game->players[0] && pit.line == 1) || (game->turn == game->players[1] && pit.line == 0))
     {
         return FALSE;
+    }
+    else if (is_starving(game, get_opponent(game->turn, game)) && !check_starvation(game, get_opponent(game->turn, game)))
+    {
+        if (game->turn == game->players[0])
+        {
+            return get_seeds(pit, game) >= 6 - pit.column;
+        }
+        else
+        {
+            return get_seeds(pit, game) >= pit.column + 1;
+        }
     }
     return TRUE;
 }
@@ -254,15 +264,40 @@ boolean is_game_over(Game *game)
     return FALSE;
 }
 
+boolean is_starving(Game *game, Player *player)
+{
+    if (game->players[0] == player)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            if (game->board[0][j] > 0)
+            {
+                return FALSE;
+            }
+        }
+    }
+    else
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            if (game->board[1][j] > 0)
+            {
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
+}
+
 boolean check_starvation(Game *game, Player *player)
 {
     if (game->players[0] == player)
     {
         for (int j = 0; j < 6; j++)
         {
-            if (game->board[0][j] >= 6 - j)
+            if (game->board[1][j] >= j + 1)
             {
-                return TRUE;
+                return FALSE;
             }
         }
     }
@@ -270,13 +305,13 @@ boolean check_starvation(Game *game, Player *player)
     {
         for (int j = 5; j >= 0; j--)
         {
-            if (game->board[1][j] >= j + 1)
+            if (game->board[0][j] >= 6 - j)
             {
-                return TRUE;
+                return FALSE;
             }
         }
     }
-    return FALSE;
+    return TRUE;
 }
 
 void tie(Game *game)
