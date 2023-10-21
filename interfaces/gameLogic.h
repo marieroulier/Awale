@@ -75,6 +75,9 @@ Player *player_line_empty(Game *game);
 // Returns true if the game is over, false otherwise.
 boolean is_game_over(Game *game);
 
+// Returns true if the given player is starving, false otherwise.
+boolean is_starving(Game *game, Player *player);
+
 // Returns true if the given player can't be fed, false otherwise.
 boolean check_starvation(Game *game, Player *player);
 
