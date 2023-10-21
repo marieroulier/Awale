@@ -266,24 +266,12 @@ boolean is_game_over(Game *game)
 
 boolean is_starving(Game *game, Player *player)
 {
-    if (game->players[0] == player)
+    int line = game->players[0] == player ? 0 : 1;
+    for (int j = 0; j < 6; j++)
     {
-        for (int j = 0; j < 6; j++)
+        if (game->board[line][j] > 0)
         {
-            if (game->board[0][j] > 0)
-            {
-                return FALSE;
-            }
-        }
-    }
-    else
-    {
-        for (int j = 0; j < 6; j++)
-        {
-            if (game->board[1][j] > 0)
-            {
-                return FALSE;
-            }
+            return FALSE;
         }
     }
     return TRUE;
