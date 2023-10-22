@@ -58,6 +58,9 @@ int get_seeds(Pit pit, Game *game);
 // Give all remaining seeds to the player.
 void empty_seeds(Game *game, Player *player);
 
+// Find the pit from the case number between 1 and 12, returns true if found, false otherwise.
+boolean get_pit(int caseNumber, Pit *pit);
+
 // Returns true if the given move is valid for the current player, false otherwise.
 boolean is_valid_move(Pit pit, Game *game);
 

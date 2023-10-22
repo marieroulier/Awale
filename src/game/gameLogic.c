@@ -97,6 +97,26 @@ void empty_seeds(Game *game, Player *player)
     }
 }
 
+boolean get_pit(int caseNumber, Pit *pit)
+{
+    if (caseNumber <= 0 || caseNumber > 12)
+    {
+        pit = NULL;
+        return FALSE;
+    }
+    else if (caseNumber <= 6)
+    {
+        pit->line = 0;
+        pit->column = 6 - caseNumber;
+    }
+    else if (caseNumber <= 12)
+    {
+        pit->line = 1;
+        pit->column = caseNumber - 7;
+    }
+    return TRUE;
+}
+
 boolean is_valid_move(Pit pit, Game *game)
 {
     if (pit.line < 0 || pit.line > 1 || pit.column < 0 || pit.column > 5 || get_seeds(pit, game) == 0 || (game->turn == game->players[0] && pit.line == 1) || (game->turn == game->players[1] && pit.line == 0))
