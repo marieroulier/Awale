@@ -24,27 +24,17 @@ Game *playGame(Game *game)
     while (!is_game_over(game))
     {
         print_board(game);
-        Pit pit;
         int caseNumber;
-        printf("\nPlayer %d, enter the pit (< 0 or > 11 == tie) in which you want to play : ", game->turn == game->players[0] ? 1 : 2);
+        printf("\nPlayer %d, enter the pit (<= 0 or > 12 == tie) in which you want to play : ", game->turn == game->players[0] ? 1 : 2);
         scanf("%d", &caseNumber);
-        if (caseNumber < 0 || caseNumber > 11)
+        Pit pit;
+        if (!get_pit(caseNumber, &pit))
         {
             tie(game);
             game->turn = get_opponent(game->turn, game);
             continue;
         }
-        else if (caseNumber <= 5)
-        {
-            pit.line = 0;
-            pit.column = caseNumber;
-        }
-        else if (caseNumber <= 11)
-        {
-            pit.line = 1;
-            pit.column = 11 - caseNumber;
-        }
-        if (is_valid_move(pit, game))
+        else if (is_valid_move(pit, game))
         {
             game = make_move(pit, game);
         }
