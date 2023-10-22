@@ -1,0 +1,39 @@
+@startuml server_workflow
+title Server Workflow
+[*] --> Init
+Init : - Create socket
+Init : - Bind port
+Init --> Connection
+Connection : - Accept new connection
+Connection -> ClientThread
+state ClientThread {
+  [*] --> WaitCommand
+  WaitCommand --> Challenge : challenge x
+  WaitCommand --> ListUsers : list
+  ListUsers --> WaitCommand
+  WaitCommand --> Challenged : challenged
+  Challenged -> CreateMatch : yes
+  CreateMatch -> Match
+  Challenged --> WaitCommand : no
+  Challenge --> WaitCommand : invalid
+  Challenge --> WaitChallengeResponse : valid
+  WaitChallengeResponse --> FindMatch : id
+  FindMatch --> Match
+  state Match {
+    [*] --> CheckGameOver
+    CheckGameOver -> [*] : finished
+    CheckGameOver ---> ShowBoard : running
+    ShowBoard --> AskUserMove : game->turn == player
+    AskUserMove --> AskUserMove : invalid move
+    AskUserMove --> MakeMove : valid move
+    MakeMove --> CheckGameOver
+  }
+  Match --> EndGame
+  EndGame : - Show final board
+  EndGame : - Show winner
+  EndGame : - Save game
+  EndGame --> WaitCommand
+  WaitChallengeResponse --> WaitCommand: no
+}
+
+@enduml
