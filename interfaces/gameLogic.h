@@ -65,12 +65,10 @@ boolean get_pit(int caseNumber, Pit *pit);
 boolean is_valid_move(Pit pit, Game *game);
 
 // Executes the given legal move for the current player.
-// Can change the game pointer.
-Game *make_move(Pit pit, Game *game);
+void make_move(Game **game, Pit pit);
 
 // Captures the seeds of the opponent if possible.
-// Can change the game pointer.
-Game *capture(Game *game, Pit pit);
+void capture(Game **game, Pit pit);
 
 // Returns the player whose line is empty if there is, null otherwise.
 Player *player_line_empty(Game *game);
