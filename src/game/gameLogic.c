@@ -261,24 +261,27 @@ Player *player_line_empty(Game *game)
 
 boolean is_game_over(Game *game)
 {
+    boolean gameOver = FALSE;
     Player *player;
     // if one player has above 25 captured seeds
     if (game->players[0]->score >= 25 || game->players[1]->score >= 25)
     {
-        return TRUE;
+        gameOver = TRUE;
     }
     // if one player has no seeds left on his line and the next player can't feed him
     else if ((player = player_line_empty(game)) != NULL && check_starvation(game, player))
     {
         empty_seeds(game, get_opponent(player, game));
-        return TRUE;
+        gameOver = TRUE;
     }
     // if it is not possible to capture seeds <-> players tie the game together
     else if (game->players[0]->tie && game->players[1]->tie)
     {
-        return TRUE;
+        gameOver = TRUE;
     }
-    return FALSE;
+    if (gameOver)
+        game->turn = NULL;
+    return gameOver;
 }
 
 boolean is_starving(Game *game, Player *player)
