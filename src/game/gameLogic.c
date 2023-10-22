@@ -137,8 +137,9 @@ boolean is_valid_move(Pit pit, Game *game)
     return TRUE;
 }
 
-Game *make_move(Pit pit, Game *game)
+void make_move(Game **gamePtr, Pit pit)
 {
+    Game *game = *gamePtr;
     int seeds = get_seeds(pit, game);
     game->board[pit.line][pit.column] = 0;
     int line = pit.line;
@@ -174,13 +175,13 @@ Game *make_move(Pit pit, Game *game)
         game->board[line][column]++;
         seeds--;
     }
-    game = capture(game, (Pit){line, column});
+    capture(gamePtr, (Pit){line, column});
     game->turn = get_opponent(game->turn, game);
-    return game;
 }
 
-Game *capture(Game *game, Pit startingPit)
+void capture(Game **gamePtr, Pit startingPit)
 {
+    Game *game = *gamePtr;
     boolean capture = FALSE;
     int currentLine = startingPit.line;
     int currentColumn = startingPit.column;
@@ -188,7 +189,7 @@ Game *capture(Game *game, Pit startingPit)
 
     // Check if the starting pit is empty, or has 1 or more than 3 seeds, or the current player isn't in the opponent's line
     if ((game->board[currentLine][currentColumn] != 2 && game->board[currentLine][currentColumn] != 3) || (game->turn == game->players[0] && currentLine == 0) || (game->turn == game->players[1] && currentLine == 1))
-        return game;
+        return;
 
     // Create a copy of the game where the seeds will be removed
     Game *gameCopy = copy_game(game);
@@ -229,14 +230,14 @@ Game *capture(Game *game, Pit startingPit)
     if (opponentHasSeeds)
     {
         free_game(game);
-        game = gameCopy;
+        *gamePtr = gameCopy;
+        game = *gamePtr;
         game->turn->score += seedsCollected;
     }
     else
     {
         free_game(gameCopy);
     }
-    return game;
 }
 
 Player *player_line_empty(Game *game)

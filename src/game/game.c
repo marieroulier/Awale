@@ -19,8 +19,9 @@ void manual_fill_board(Game *game)
 }
 
 // Play the game
-Game *playGame(Game *game)
+void playGame(Game **gamePtr)
 {
+    Game *game = *gamePtr;
     while (!is_game_over(game))
     {
         print_board(game);
@@ -36,7 +37,8 @@ Game *playGame(Game *game)
         }
         else if (is_valid_move(pit, game))
         {
-            game = make_move(pit, game);
+            make_move(gamePtr, pit);
+            game = *gamePtr;
         }
         else
         {
@@ -54,7 +56,6 @@ Game *playGame(Game *game)
     {
         printf("Tie !\n");
     }
-    return game;
 }
 
 int main()
@@ -77,7 +78,7 @@ int main()
         manual_fill_board(game);
     }
 
-    game = playGame(game);
+    playGame(&game);
 
     free_game(game);
     free_player(player1);
