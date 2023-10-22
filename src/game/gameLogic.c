@@ -107,12 +107,12 @@ boolean get_pit(int caseNumber, Pit *pit)
     else if (caseNumber <= 6)
     {
         pit->line = 0;
-        pit->column = 6 - caseNumber;
+        pit->column = caseNumber - 1;
     }
     else if (caseNumber <= 12)
     {
         pit->line = 1;
-        pit->column = caseNumber - 7;
+        pit->column = 12 - caseNumber;
     }
     return TRUE;
 }
