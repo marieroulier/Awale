@@ -5,6 +5,8 @@
 
 #include "server.h"
 #include "clientServer.h"
+#include <pthread.h>
+#include <signal.h>
 
 static void init(void)
 {
@@ -26,21 +28,60 @@ static void end(void)
 #endif
 }
 
+Client *clients[MAX_CLIENTS];
+pthread_t threads[MAX_CLIENTS];
+Game *games[MAX_GAMES];
+
+void *clientHandler(void *indexInClients)
+{
+   int index = *(int *)indexInClients;
+   Client *client = clients[index];
+   char buffer[BUF_SIZE];
+   while (1)
+   {
+      int c = read_client(client->sock, buffer);
+      if (c <= 0)
+      {
+         break;
+      }
+      else
+      {
+         printf("Received message from %s: %s\n", client->name, buffer);
+      }
+   }
+
+   printf("Client %s disconnected\n", client->name);
+   clear_client(index);
+   return NULL;
+}
+
+static int add_client(Client **clientPtr)
+{
+   for (int i = 0; i < MAX_CLIENTS; i++)
+   {
+      if (clients[i] == NULL)
+      {
+         clients[i] = *clientPtr;
+         return i;
+      }
+   }
+   return -1;
+}
+
 static void app(void)
 {
    SOCKET sock = init_connection();
+
+   /* init the array of threads */
+   pthread_t threads[MAX_THREADS];
+
    char buffer[BUF_SIZE];
-   /* the index for the array */
-   int actual = 0;
    int max = sock;
-   /* an array for all clients */
-   Client clients[MAX_CLIENTS];
 
    fd_set rdfs;
 
    while (1)
    {
-      int i = 0;
       FD_ZERO(&rdfs);
 
       /* add STDIN_FILENO */
@@ -49,19 +90,12 @@ static void app(void)
       /* add the connection socket */
       FD_SET(sock, &rdfs);
 
-      /* add socket of each client */
-      for (i = 0; i < actual; i++)
-      {
-         FD_SET(clients[i].sock, &rdfs);
-      }
-
       if (select(max + 1, &rdfs, NULL, NULL, NULL) == -1)
       {
          perror("select()");
          exit(errno);
       }
 
-      /* something from standard input : i.e keyboard */
       if (FD_ISSET(STDIN_FILENO, &rdfs))
       {
          /* stop process when type on keyboard */
@@ -91,65 +125,49 @@ static void app(void)
 
          FD_SET(csock, &rdfs);
 
-         Client c = {csock,"",FALSE,FALSE};
-         strncpy(c.name, buffer, BUF_SIZE - 1);
-         clients[actual] = c;
-         actual++;
-      }
-      else
-      {
-         // TODO : A THREADER
-         int i = 0;
-         for (i = 0; i < actual; i++)
+         Client *client = (Client *)malloc(sizeof(Client));
+         client->sock = csock;
+         client->isPlaying = FALSE;
+         client->isChallenged = FALSE;
+         strncpy(client->name, buffer, BUF_SIZE - 1);
+         int index = add_client(&client);
+
+         pthread_t thread;
+         int threadResult = pthread_create(&thread, NULL, clientHandler, &index);
+         if (threadResult != 0)
          {
-            /* a client is talking */
-            if (FD_ISSET(clients[i].sock, &rdfs))
-            {
-               Client client = clients[i];
-               int c = read_client(clients[i].sock, buffer);
-               /* client disconnected */
-               if (c == 0)
-               {
-                  closesocket(clients[i].sock);
-                  remove_client(clients, i, &actual);
-                  strncpy(buffer, client.name, BUF_SIZE - 1);
-                  strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
-                  send_message_to_all_clients(clients, client, actual, buffer, 1);
-               }
-               else
-               {
-                  if (strcmp(buffer, "list") == 0){
-                     // to list
-                  }
-                  else{
-                  send_message_to_all_clients(clients, client, actual, buffer, 0);
-                  }
-               }
-               break;
-            }
+            printf("error creating thread\n");
+            exit(0);
          }
+         threads[index] = thread;
       }
    }
 
-   clear_clients(clients, actual);
+   for (int i = 0; i < MAX_THREADS; i++)
+   {
+      pthread_kill(threads[i], 0);
+   }
+   clear_all_clients();
    end_connection(sock);
 }
 
-static void clear_clients(Client *clients, int actual)
+static void clear_client(int index)
 {
-   int i = 0;
-   for (i = 0; i < actual; i++)
-   {
-      closesocket(clients[i].sock);
-   }
+   closesocket(clients[index]->sock);
+   free(clients[index]);
+   clients[index] = NULL;
 }
 
-static void remove_client(Client *clients, int to_remove, int *actual)
+static void clear_all_clients()
 {
-   /* we remove the client in the array */
-   memmove(clients + to_remove, clients + to_remove + 1, (*actual - to_remove - 1) * sizeof(Client));
-   /* number client - 1 */
-   (*actual)--;
+   int i = 0;
+   for (i = 0; i < MAX_CLIENTS; i++)
+   {
+      if (clients[i] != NULL)
+      {
+         clear_client(i);
+      }
+   }
 }
 
 static void send_message_to_all_clients(Client *clients, Client sender, int actual, const char *buffer, char from_server)
@@ -243,7 +261,5 @@ int main(int argc, char **argv)
 
    return EXIT_SUCCESS;
 }
-
-
 
 // implémenter dans app l'attente du message du client pour challenger qqun d'autre / être challengé

@@ -30,4 +30,4 @@ display.o: $(GAME_PATH)/display.c
 
 
 clean:
-	rm -rf $(BIN_PATH)/* $(BUILD_PATH)/*
+	rm -rf $(BIN_PATH)/* $(BUILD_PATH)/*.o

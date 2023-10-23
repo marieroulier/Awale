@@ -26,21 +26,45 @@ typedef struct in_addr IN_ADDR;
 #define CRLF "\r\n"
 #define PORT 1977
 #define MAX_CLIENTS 100
+#define MAX_THREADS 100
+#define MAX_GAMES MAX_CLIENTS / 2
 
 #define BUF_SIZE 1024
 
 #include "clientServer.h"
 #include "gameLogic.h"
 
+// Initializes the server.
 static void init(void);
+
+// Ends the server.
 static void end(void);
+
+// Runs the server.
 static void app(void);
+
+// Initializes the connection.
 static int init_connection(void);
+
+// Ends the connection.
 static void end_connection(int sock);
+
+// Reads a message from the client and puts it into buffer.
 static int read_client(SOCKET sock, char *buffer);
+
+// Writes a message to the client.
 static void write_client(SOCKET sock, const char *buffer);
+
+// Reads a message from the server and puts it into buffer.
 static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
-static void remove_client(Client *clients, int to_remove, int *actual);
-static void clear_clients(Client *clients, int actual);
+
+// Adds a client to the clients array.
+static int add_client(Client **clientPtr);
+
+// Frees the memory allocated for one client at index i, and closes the connections.
+static void clear_client(int index);
+
+// Frees the memory allocated for all the clients, and closes the connections.
+static void clear_all_clients();
 
 #endif /* guard */
