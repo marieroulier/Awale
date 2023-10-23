@@ -98,17 +98,17 @@ void *clientHandler(void *indexInClients)
    return NULL;
 }
 
-static int add_client(Client **clientPtr)
+static int add_client(Client *client)
 {
    for (int i = 0; i < MAX_CLIENTS; i++)
    {
       if (clients[i] == NULL)
       {
-         clients[i] = *clientPtr;
+         clients[i] = client;
          return i;
       }
    }
-   return -1;
+   return ERROR;
 }
 
 static void list_commands(Client *client)
@@ -266,7 +266,7 @@ static void app(void)
 
          /* after connecting the client sends its name */
          // TODO : check if name is already taken, if so, refuse connection
-         if (read_client(csock, buffer) == -1)
+         if (read_client(csock, buffer) == SOCKET_ERROR)
          {
             /* disconnected */
             continue;
@@ -282,14 +282,14 @@ static void app(void)
          client->isPlaying = FALSE;
          client->challengedBy = NULL;
          strncpy(client->name, buffer, BUF_SIZE - 1);
-         int index = add_client(&client);
+         int index = add_client(client);
 
          pthread_t thread;
          int threadResult = pthread_create(&thread, NULL, clientHandler, &index);
          if (threadResult != 0)
          {
             printf("error creating thread\n");
-            exit(0);
+            exit(-1);
          }
          threads[index] = thread;
       }
@@ -303,6 +303,7 @@ static void app(void)
    end_connection(sock);
 }
 
+// TODO : check if client was in a match or was challenging someone
 static void clear_client(int index)
 {
    closesocket(clients[index]->sock);

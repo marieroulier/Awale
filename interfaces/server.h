@@ -31,6 +31,8 @@ typedef struct in_addr IN_ADDR;
 
 #define BUF_SIZE 1024
 
+#define ERROR -1
+
 #include "clientServer.h"
 #include "gameLogic.h"
 
@@ -59,7 +61,7 @@ static void write_client(SOCKET sock, const char *buffer);
 static void send_message_to_all_clients(Client *client, const char *buffer, char from_server);
 
 // Adds a client to the clients array.
-static int add_client(Client **clientPtr);
+static int add_client(Client *client);
 
 // Lists the avaiblable commands
 static void list_commands(Client *client);
