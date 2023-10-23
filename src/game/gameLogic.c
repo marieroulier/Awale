@@ -8,14 +8,6 @@ Player *create_player()
     return player;
 }
 
-Player *create_player_with_client(Client *client)
-{
-    Player *player = create_player();
-    if (client != NULL)
-        client->isPlaying = TRUE;
-    return player;
-}
-
 Game *new_game(Player *player1, Player *player2)
 {
     Game *game = (Game *)malloc(sizeof(Game));

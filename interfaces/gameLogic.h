@@ -3,13 +3,12 @@
 
 #include <stdlib.h>
 #include <time.h>
-#include "clientServer.h"
 
 #define TRUE 1
 #define FALSE 0
 typedef int boolean;
 
-typedef struct
+typedef struct Player
 {
     int score;
     boolean tie;
@@ -30,9 +29,6 @@ typedef struct
 
 // Initializes a new player
 Player *create_player();
-
-// Initializes a new player of the given client
-Player *create_player_with_client(Client *client);
 
 // Initializes a new game with the given player names and returns a pointer to the game.
 Game *new_game(Player *player1, Player *player2);

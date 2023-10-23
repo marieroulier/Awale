@@ -6,11 +6,13 @@
 typedef int SOCKET;
 typedef int boolean;
 
+#include "gameLogic.h"
 typedef struct _Client
 {
    SOCKET sock;
    char name[BUF_SIZE];
-   boolean isPlaying;
+   Game *game;
+   Player *player;
    struct _Client *challengedBy;
 } Client;
 

@@ -36,7 +36,6 @@ typedef struct in_addr IN_ADDR;
 #define USERNAME_EMPTY_ERROR -3
 
 #include "clientServer.h"
-#include "gameLogic.h"
 
 // Initializes the server.
 static void init(void);
@@ -75,7 +74,13 @@ static void list_clients(char *buffer, Client *client);
 static Client *getClientByName(const char *name);
 
 // The client goes into challenger mode.
-static void challengeClient(Client *challenger);
+static int challengeClient(Client *challenger);
+
+// Client threaded handler.
+void *clientHandler(void *indexInClients);
+
+// Check if the socket is still alive, returns true if it is, false otherwise.
+static boolean check_socket(int sockFd);
 
 // Frees the memory allocated for one client at index i, and closes the connections.
 static void clear_client(int index);
