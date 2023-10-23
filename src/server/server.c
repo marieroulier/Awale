@@ -5,7 +5,6 @@
 
 #include "server.h"
 #include "display.h"
-#include "clientServer.h"
 #include <pthread.h>
 #include <signal.h>
 
@@ -107,8 +106,16 @@ static int add_client(Client *client)
          clients[i] = client;
          return i;
       }
+      else if (strcmp(clients[i]->name, client->name) == 0)
+      {
+         return USERNAME_TAKEN_ERROR;
+      }
+      else if (strlen(client->name) == 0)
+      {
+         return USERNAME_EMPTY_ERROR;
+      }
    }
-   return ERROR;
+   return MAX_PLAYERS_ERROR;
 }
 
 static void list_commands(Client *client)
@@ -256,7 +263,7 @@ static void app(void)
       {
          /* new client */
          SOCKADDR_IN csin = {0};
-         size_t sinsize = sizeof csin;
+         socklen_t sinsize = sizeof csin;
          int csock = accept(sock, (SOCKADDR *)&csin, &sinsize);
          if (csock == SOCKET_ERROR)
          {
@@ -265,7 +272,6 @@ static void app(void)
          }
 
          /* after connecting the client sends its name */
-         // TODO : check if name is already taken, if so, refuse connection
          if (read_client(csock, buffer) == SOCKET_ERROR)
          {
             /* disconnected */
@@ -284,17 +290,43 @@ static void app(void)
          strncpy(client->name, buffer, BUF_SIZE - 1);
          int index = add_client(client);
 
-         pthread_t thread;
-         int threadResult = pthread_create(&thread, NULL, clientHandler, &index);
-         if (threadResult != 0)
+         if (index < 0)
          {
-            printf("error creating thread\n");
-            exit(-1);
+            switch (index)
+            {
+            case MAX_PLAYERS_ERROR:
+               write_client(csock, "\nServer is full !\n");
+               break;
+            case USERNAME_TAKEN_ERROR:
+               write_client(csock, "\nUsername already taken !\n");
+               break;
+            case USERNAME_EMPTY_ERROR:
+               write_client(csock, "\nUsername can't be empty !\n");
+               break;
+            }
+            end_connection(csock);
          }
-         threads[index] = thread;
+         else
+         {
+            char message[BUF_SIZE];
+            snprintf(message, BUF_SIZE, "\nWelcome %s to the Awale Server !\n", client->name);
+            write_client(csock, message);
+            printf("%s is connected !\n", client->name);
+
+            // Create dedicated thread for the client
+            pthread_t thread;
+            int threadResult = pthread_create(&thread, NULL, clientHandler, &index);
+            if (threadResult != 0)
+            {
+               printf("error creating thread\n");
+               exit(-1);
+            }
+            threads[index] = thread;
+         }
       }
    }
 
+   // If server is stopped, stop all the clients
    for (int i = 0; i < MAX_THREADS; i++)
    {
       pthread_kill(threads[i], 0);
@@ -303,9 +335,16 @@ static void app(void)
    end_connection(sock);
 }
 
-// TODO : check if client was in a match or was challenging someone
 static void clear_client(int index)
 {
+   if (clients[index]->challengedBy != NULL)
+   {
+      clients[index]->challengedBy->challengedBy = NULL;
+   }
+   if (clients[index]->isPlaying == TRUE)
+   {
+      // TODO : end game and make the other win by giving the seeds
+   }
    closesocket(clients[index]->sock);
    free(clients[index]);
    clients[index] = NULL;

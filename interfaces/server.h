@@ -31,7 +31,9 @@ typedef struct in_addr IN_ADDR;
 
 #define BUF_SIZE 1024
 
-#define ERROR -1
+#define MAX_PLAYERS_ERROR -1
+#define USERNAME_TAKEN_ERROR -2
+#define USERNAME_EMPTY_ERROR -3
 
 #include "clientServer.h"
 #include "gameLogic.h"
