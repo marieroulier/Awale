@@ -56,10 +56,22 @@ static int read_client(SOCKET sock, char *buffer);
 static void write_client(SOCKET sock, const char *buffer);
 
 // Reads a message from the server and puts it into buffer.
-static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
+static void send_message_to_all_clients(Client *client, const char *buffer, char from_server);
 
 // Adds a client to the clients array.
 static int add_client(Client **clientPtr);
+
+// Lists the avaiblable commands
+static void list_commands(Client *client);
+
+// Fills the buffer with the list of clients that are available for games.
+static void list_clients(char *buffer, Client *client);
+
+// Returns a pointer to the client with the given name.
+static Client *getClientByName(const char *name);
+
+// The client goes into challenger mode.
+static void challengeClient(Client *challenger);
 
 // Frees the memory allocated for one client at index i, and closes the connections.
 static void clear_client(int index);

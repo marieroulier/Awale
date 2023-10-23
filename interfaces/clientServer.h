@@ -6,12 +6,12 @@
 typedef int SOCKET;
 typedef int boolean;
 
-typedef struct
+typedef struct _Client
 {
    SOCKET sock;
    char name[BUF_SIZE];
    boolean isPlaying;
-   boolean isChallenged;
+   struct _Client *challengedBy;
 } Client;
 
 #endif /* guard */
