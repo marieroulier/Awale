@@ -11,6 +11,7 @@ typedef struct
    SOCKET sock;
    char name[BUF_SIZE];
    boolean isPlaying;
+   boolean isChallenged;
 } Client;
 
 #endif /* guard */

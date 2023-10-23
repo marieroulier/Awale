@@ -30,6 +30,7 @@ typedef struct in_addr IN_ADDR;
 #define BUF_SIZE 1024
 
 #include "clientServer.h"
+#include "gameLogic.h"
 
 static void init(void);
 static void end(void);

@@ -91,13 +91,14 @@ static void app(void)
 
          FD_SET(csock, &rdfs);
 
-         Client c = {csock};
+         Client c = {csock,"",FALSE,FALSE};
          strncpy(c.name, buffer, BUF_SIZE - 1);
          clients[actual] = c;
          actual++;
       }
       else
       {
+         // TODO : A THREADER
          int i = 0;
          for (i = 0; i < actual; i++)
          {
@@ -117,7 +118,12 @@ static void app(void)
                }
                else
                {
+                  if (strcmp(buffer, "list") == 0){
+                     // to list
+                  }
+                  else{
                   send_message_to_all_clients(clients, client, actual, buffer, 0);
+                  }
                }
                break;
             }
@@ -237,3 +243,7 @@ int main(int argc, char **argv)
 
    return EXIT_SUCCESS;
 }
+
+
+
+// implémenter dans app l'attente du message du client pour challenger qqun d'autre / être challengé
