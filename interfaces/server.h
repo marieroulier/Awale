@@ -76,6 +76,9 @@ static Client *getClientByName(const char *name);
 // Checks if there is a game for the client, and if so handles it until finished.
 static void handleGame(Client *client);
 
+// Handles the client's menu.
+static int handleMenu(Client *client);
+
 // The client goes into challenger mode.
 static int challengeClient(Client *challenger);
 
