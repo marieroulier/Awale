@@ -43,59 +43,7 @@ void *clientHandler(void *indexInClients)
 
    while (1)
    {
-      while (client->game != NULL)
-      {
-         // TODO : handle disconnections during game
-         Game *game = client->game;
-         char buffer[BUF_SIZE];
-         boolean quit = FALSE;
-         while (game != NULL && game->turn != client->player)
-         {
-            if (!check_socket(client->sock))
-            {
-               quit = TRUE;
-               break;
-            }
-         }
-         if (game == NULL || quit)
-         {
-            break;
-         }
-         write_client(client->sock, "\n" RED "It's your turn !\n" RESET);
-         construct_board(game, buffer);
-         write_client(client->sock, buffer);
-         if (read_client(client->sock, buffer) <= 0)
-         {
-            break;
-         }
-         else
-         {
-            int caseNumber = atoi(buffer);
-            if (caseNumber == 0)
-            {
-               write_client(client->sock, RED "Invalid move\nPlease retry another one.\n" RESET);
-               continue;
-            }
-            Pit pit;
-            if (!get_pit(caseNumber, &pit))
-            {
-               tie(game);
-               game->turn = get_opponent(game->turn, game);
-               continue;
-            }
-            else if (is_valid_move(pit, game))
-            {
-               make_move(&game, pit);
-               write_client(client->sock, "\nMove done !\nWait for your turn...\n");
-            }
-            else
-            {
-               write_client(client->sock, RED "Invalid move\nPlease retry another one.\n" RESET);
-            }
-
-            // TODO : handle game over
-         }
-      }
+      handleGame(client);
       if (FD_ISSET(client->sock, &rdfs))
       {
          list_commands(client);
@@ -272,6 +220,114 @@ static Client *getClientByName(const char *name)
       }
    }
    return NULL;
+}
+
+static void handleGame(Client *client)
+{
+   while (client->game != NULL)
+   {
+      Game *game = client->game;
+      char buffer[BUF_SIZE];
+      boolean quit = FALSE;
+      while (game != NULL && game->turn != NULL && game->turn == client->challengedBy->player)
+      {
+         // Checks for disconnect and absorbs all inputs while waiting for the other player
+         if (!check_socket(client->sock))
+         {
+            quit = TRUE;
+            break;
+         }
+      }
+      // Pointer to game may have changed in the other thread
+      // Checks if the game is still going
+      // Checks for disconnect
+      if ((game = client->game) == NULL || game->turn == NULL || quit)
+      {
+         break;
+      }
+
+      write_client(client->sock, "\n" RED "It's your turn !\n" RESET "Type " PURPLE "tie" RESET " to tie\n");
+      construct_board(game, buffer);
+      write_client(client->sock, buffer);
+
+      // Check if the game and the socket are still alive
+      if (client->game == NULL || read_client(client->sock, buffer) <= 0)
+      {
+         break;
+      }
+      else
+      {
+         int caseNumber = atoi(buffer);
+         Pit pit;
+
+         // Check if the player wants to tie
+         if (strcmp(buffer, "tie") == 0)
+         {
+            tie(game);
+            write_client(client->sock, GREEN "\nYou asked to tie !\n" RESET);
+            write_client(client->challengedBy->sock, GREEN "\nYour opponent asked to tie !\n" RESET);
+            game->turn = get_opponent(game->turn, game);
+         }
+         // Check if conversion was successful
+         else if (caseNumber == 0)
+         {
+            write_client(client->sock, RED "Bad input, please write a number.\n" RESET);
+         }
+         else if (get_pit(caseNumber, &pit) && is_valid_move(pit, game))
+         {
+            make_move(&(client->game), pit);
+            game = client->game;
+            client->challengedBy->game = game;
+            write_client(client->sock, "\nMove done !\nWait for your turn...\n");
+         }
+         else
+         {
+            write_client(client->sock, RED "Invalid move\nPlease retry another one.\n" RESET);
+         }
+
+         // Game is over
+         if (game != NULL && is_game_over(game))
+         {
+            write_client(client->sock, "\n\n\n\n\n Final board !\n");
+            construct_board(game, buffer);
+            write_client(client->sock, buffer);
+            write_client(client->challengedBy->sock, buffer);
+            Player *winner = get_winner(game);
+            if (winner != NULL)
+            {
+               char message[BUF_SIZE];
+               snprintf(message, BUF_SIZE, BLUE "\nPlayer %d won !\n" RESET, winner == game->players[0] ? 1 : 2);
+               write_client(client->sock, message);
+               write_client(client->challengedBy->sock, message);
+               if (winner == client->player)
+               {
+                  write_client(client->sock, GREEN "\nCongratulations, you won !\n" RESET);
+                  write_client(client->challengedBy->sock, RED "\nYou lost !\n" RESET);
+               }
+               else
+               {
+                  write_client(client->sock, RED "\nYou lost !\n" RESET);
+                  write_client(client->challengedBy->sock, GREEN "\nCongratulations, you won !\n" RESET);
+               }
+            }
+            else
+            {
+               write_client(client->sock, "\nTie !\n");
+               write_client(client->challengedBy->sock, "\nTie !\n");
+            }
+            free_player(game->players[0]);
+            free_player(game->players[1]);
+            free(game);
+            client->game = NULL;
+            client->player = NULL;
+            client->challengedBy->game = NULL;
+            client->challengedBy->player = NULL;
+            client->challengedBy->challengedBy = NULL;
+            client->challengedBy = NULL;
+            break;
+         }
+      }
+   }
 }
 
 static int challengeClient(Client *challenger)
@@ -463,7 +519,7 @@ static void clear_client(int index)
       write_client(clients[index]->challengedBy->sock, message);
       free_player(clients[index]->game->players[0]);
       free_player(clients[index]->game->players[1]);
-      free(clients[index]->game);
+      free_game(clients[index]->game);
       clients[index]->challengedBy->game = NULL;
       clients[index]->player = NULL;
       clients[index]->challengedBy->player = NULL;

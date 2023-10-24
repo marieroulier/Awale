@@ -168,6 +168,7 @@ void make_move(Game **gamePtr, Pit pit)
         seeds--;
     }
     capture(gamePtr, (Pit){line, column});
+    game = *gamePtr;
     game->turn = get_opponent(game->turn, game);
 }
 

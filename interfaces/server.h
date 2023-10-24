@@ -73,6 +73,9 @@ static void list_clients(char *buffer, Client *client);
 // Returns a pointer to the client with the given name.
 static Client *getClientByName(const char *name);
 
+// Checks if there is a game for the client, and if so handles it until finished.
+static void handleGame(Client *client);
+
 // The client goes into challenger mode.
 static int challengeClient(Client *challenger);
 
