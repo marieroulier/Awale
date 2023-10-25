@@ -184,8 +184,11 @@ static void handleGame(Client *client)
       }
 
       write_client(client->sock, "\n" RED "It's your turn !\n" RESET "Type " PURPLE "tie" RESET " to tie\n");
-      construct_board(game, buffer);
+      char *nameP1 = client->player == game->players[0] ? client->name : client->challengedBy->name;
+      char *nameP2 = client->player == game->players[1] ? client->name : client->challengedBy->name;
+      construct_board(game, buffer, nameP1, nameP2);
       write_client(client->sock, buffer);
+      write_client(client->challengedBy->sock, buffer);
 
       // Check if the game and the socket are still alive
       if (client->game == NULL || read_client(client->sock, buffer) <= 0)
@@ -194,6 +197,7 @@ static void handleGame(Client *client)
       }
       else
       {
+         game = client->game;
          int caseNumber = atoi(buffer);
          Pit pit;
 
@@ -226,7 +230,7 @@ static void handleGame(Client *client)
          if (game != NULL && is_game_over(game))
          {
             write_client(client->sock, "\n\n\n\n\n Final board !\n");
-            construct_board(game, buffer);
+            construct_board(game, buffer, nameP1, nameP2);
             write_client(client->sock, buffer);
             write_client(client->challengedBy->sock, buffer);
             Player *winner = get_winner(game);

@@ -17,7 +17,7 @@
 void print_board(Game *game);
 
 // Construct the string of a game board.
-void construct_board(Game *game, char *board);
+void construct_board(Game *game, char *board, char *nameP1, char *nameP2);
 
 // Construct the string of a turn message.
 void construct_turn_message(Game *game, char *message);
