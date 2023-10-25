@@ -113,6 +113,8 @@ static void list_commands(Client *client)
    buffer[0] = 0;
    strncat(buffer, "\nList of commands:\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "list" RESET " : list the available players\n", BUF_SIZE - strlen(buffer) - 1);
+   strncat(buffer, "\t- " BLUE "bio" RESET " : edit your bio\n", BUF_SIZE - strlen(buffer) - 1);
+   strncat(buffer, "\t- " BLUE "consult" RESET " : consult the bio of another player\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "observe" RESET " : observe a game\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "challenge" RESET " : challenge a player\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "accept" RESET " : accept a challenge\n", BUF_SIZE - strlen(buffer) - 1);
@@ -312,6 +314,16 @@ static int handleMenu(Client *client)
          list_clients(buffer, client);
          write_client(client->sock, buffer);
       }
+      else if (strcmp(buffer, "bio") == 0)
+      {
+         if (handleBio(client) == SOCKET_ERROR)
+            return SOCKET_ERROR;
+      }
+      else if (strcmp(buffer, "consult") == 0)
+      {
+         if (handleConsult(client) == SOCKET_ERROR)
+            return SOCKET_ERROR;
+      }
       else if (strcmp(buffer, "observe") == 0)
       {
          if (handleObserver(client) == SOCKET_ERROR)
@@ -383,7 +395,7 @@ static int handleObserver(Client *client)
    char buffer[BUF_SIZE];
    while (1)
    {
-      write_client(client->sock, "\nWho do you want to observe ?\n" RED "cancel" RESET " to cancel\n");
+      write_client(client->sock, "\nWhose bio do you want to observe ?\n" RED "cancel" RESET " to cancel\n");
       list_games(buffer);
       write_client(client->sock, buffer);
 
@@ -428,6 +440,65 @@ static int handleObserver(Client *client)
                return EXIT_SUCCESS;
             }
          }
+      }
+   }
+   return EXIT_SUCCESS;
+}
+
+static int handleBio(Client *client)
+{
+   char buffer[BUF_SIZE];
+   while (1)
+   {
+      write_client(client->sock, "\nType your new bio (max 255 characters) :\n" RED "cancel" RESET " to cancel\n");
+      buffer[0] = 0;
+      if (read_client(client->sock, buffer) <= 0)
+         return SOCKET_ERROR;
+      if (strcmp(buffer, "cancel") == 0)
+      {
+         break;
+      }
+      else if (strlen(buffer) > BIO_SIZE)
+      {
+         write_client(client->sock, RED "\nBio too long !\n" RESET);
+      }
+      else
+      {
+         strncpy(client->bio, buffer, BIO_SIZE - 1);
+         break;
+      }
+   }
+   return EXIT_SUCCESS;
+}
+
+static int handleConsult(Client *client)
+{
+   char buffer[BUF_SIZE];
+   while (1)
+   {
+      write_client(client->sock, "\nWho do you want to consult ?\n" RED "cancel" RESET " to cancel\n");
+      list_clients(buffer, client);
+      write_client(client->sock, buffer);
+
+      buffer[0] = 0;
+      if (read_client(client->sock, buffer) <= 0)
+         return SOCKET_ERROR;
+      if (strcmp(buffer, "cancel") == 0)
+      {
+         break;
+      }
+      Client *consulted = getClientByName(buffer);
+      char message[BUF_SIZE];
+      if (consulted == NULL)
+      {
+         snprintf(message, BUF_SIZE, "\nPlayer " RED "%s" RESET " not found !\n", buffer);
+         write_client(client->sock, message);
+      }
+      else
+      {
+         snprintf(message, BUF_SIZE, "\n%s's bio :\n%s\n", consulted->name, consulted->bio);
+         write_client(client->sock, message);
+         break;
       }
    }
    return EXIT_SUCCESS;
