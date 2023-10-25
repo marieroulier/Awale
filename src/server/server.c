@@ -120,6 +120,7 @@ static void list_commands(Client *client)
    strncat(buffer, "\t- " BLUE "accept" RESET " : accept a challenge\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "refuse" RESET " : refuse a challenge\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "quit" RESET " : quit the game\n", BUF_SIZE - strlen(buffer) - 1);
+   strncat(buffer, "\t- " GREEN "any other command will be sent as a message chat" RESET, BUF_SIZE - strlen(buffer) - 1);
    write_client(client->sock, buffer);
 }
 
