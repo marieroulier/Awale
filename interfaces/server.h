@@ -84,6 +84,12 @@ static int handleMenu(Client *client);
 // Handles the observer mode.
 static int handleObserver(Client *client);
 
+// Handles the editing of the bio.
+static int handleBio(Client *client);
+
+// Handles the consulting of other bios.
+static int handleConsult(Client *client);
+
 // Sends to all observers the message.
 static void send_message_to_all_observers(Game *game, const char *buffer);
 
