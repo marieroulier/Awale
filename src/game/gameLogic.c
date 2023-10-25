@@ -132,6 +132,11 @@ boolean is_valid_move(Pit pit, Game *game)
 void make_move(Game **gamePtr, Pit pit)
 {
     Game *game = *gamePtr;
+
+    // If move is done, it means it's not a tie
+    game->players[0]->tie = FALSE;
+    game->players[1]->tie = FALSE;
+
     int seeds = get_seeds(pit, game);
     game->board[pit.line][pit.column] = 0;
     int line = pit.line;

@@ -57,7 +57,7 @@ void *clientHandler(void *indexInClients)
    return NULL;
 }
 
-static boolean check_socket(int sockFd)
+static boolean check_socket(int sockFd, char *tempBuffer)
 {
    fd_set read_fds;
    struct timeval tv;
@@ -77,8 +77,7 @@ static boolean check_socket(int sockFd)
    else if (select_ret > 0)
    {
       // Data available, check if disconnect
-      char temp_buffer[BUF_SIZE];
-      int bytes_read = read_client(sockFd, temp_buffer);
+      int bytes_read = read_client(sockFd, tempBuffer);
       if (bytes_read <= 0)
       {
          return FALSE;
@@ -114,6 +113,7 @@ static void list_commands(Client *client)
    buffer[0] = 0;
    strncat(buffer, "\nList of commands:\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "list" RESET " : list the available players\n", BUF_SIZE - strlen(buffer) - 1);
+   strncat(buffer, "\t- " BLUE "observe" RESET " : observe a game\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "challenge" RESET " : challenge a player\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "accept" RESET " : accept a challenge\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "refuse" RESET " : refuse a challenge\n", BUF_SIZE - strlen(buffer) - 1);
@@ -147,6 +147,23 @@ static void list_clients(char *buffer, Client *client)
    }
 }
 
+static void list_games(char *buffer)
+{
+   buffer[0] = 0;
+   strncat(buffer, "\nList of games:\n", BUF_SIZE - strlen(buffer) - 1);
+   for (int i = 0; i < MAX_CLIENTS; i++)
+   {
+      if (clients[i] != NULL && clients[i]->game != NULL && clients[i]->player == clients[i]->game->players[0])
+      {
+         strncat(buffer, "\t- ", BUF_SIZE - strlen(buffer) - 1);
+         strncat(buffer, clients[i]->name, BUF_SIZE - strlen(buffer) - 1);
+         strncat(buffer, " (P1)" RED " VS " RESET, BUF_SIZE - strlen(buffer) - 1);
+         strncat(buffer, clients[i]->challengedBy->name, BUF_SIZE - strlen(buffer) - 1);
+         strncat(buffer, " (P2)\n", BUF_SIZE - strlen(buffer) - 1);
+      }
+   }
+}
+
 static Client *getClientByName(const char *name)
 {
    for (int i = 0; i < MAX_CLIENTS; i++)
@@ -168,8 +185,9 @@ static void handleGame(Client *client)
       boolean quit = FALSE;
       while (game != NULL && game->turn != NULL && game->turn == client->challengedBy->player)
       {
+         char tempBuffer[BUF_SIZE];
          // Checks for disconnect and absorbs all inputs while waiting for the other player
-         if (!check_socket(client->sock))
+         if (!check_socket(client->sock, tempBuffer))
          {
             quit = TRUE;
             break;
@@ -187,8 +205,8 @@ static void handleGame(Client *client)
       char *nameP1 = client->player == game->players[0] ? client->name : client->challengedBy->name;
       char *nameP2 = client->player == game->players[1] ? client->name : client->challengedBy->name;
       construct_board(game, buffer, nameP1, nameP2);
-      write_client(client->sock, buffer);
-      write_client(client->challengedBy->sock, buffer);
+
+      send_message_to_all_observers(game, buffer);
 
       // Check if the game and the socket are still alive
       if (client->game == NULL || read_client(client->sock, buffer) <= 0)
@@ -217,8 +235,10 @@ static void handleGame(Client *client)
          else if (get_pit(caseNumber, &pit) && is_valid_move(pit, game))
          {
             make_move(&(client->game), pit);
+
+            update_game_of_all_observers(game, client->game);
             game = client->game;
-            client->challengedBy->game = game;
+
             write_client(client->sock, "\nMove done !\nWait for your turn...\n");
          }
          else
@@ -229,17 +249,19 @@ static void handleGame(Client *client)
          // Game is over
          if (game != NULL && is_game_over(game))
          {
-            write_client(client->sock, "\n\n\n\n\n Final board !\n");
             construct_board(game, buffer, nameP1, nameP2);
-            write_client(client->sock, buffer);
-            write_client(client->challengedBy->sock, buffer);
+            snprintf(buffer, BUF_SIZE, "\n\n\n\n\n Final board !\n%s", buffer);
+
+            send_message_to_all_observers(game, buffer);
+
             Player *winner = get_winner(game);
             if (winner != NULL)
             {
                char message[BUF_SIZE];
                snprintf(message, BUF_SIZE, BLUE "\nPlayer %d won !\n" RESET, winner == game->players[0] ? 1 : 2);
-               write_client(client->sock, message);
-               write_client(client->challengedBy->sock, message);
+
+               send_message_to_all_observers(game, message);
+
                if (winner == client->player)
                {
                   write_client(client->sock, GREEN "\nCongratulations, you won !\n" RESET);
@@ -257,13 +279,14 @@ static void handleGame(Client *client)
                write_client(client->challengedBy->sock, RED "\nTie !\n" RESET);
             }
 
+            update_game_of_all_observers(game, NULL);
+
             // Free all the memory allocated for the game
             free_player(game->players[0]);
             free_player(game->players[1]);
-            free(game);
-            client->game = NULL;
+            free_game(game);
+
             client->player = NULL;
-            client->challengedBy->game = NULL;
             client->challengedBy->player = NULL;
             client->challengedBy->challengedBy = NULL;
             client->challengedBy = NULL;
@@ -288,6 +311,11 @@ static int handleMenu(Client *client)
       {
          list_clients(buffer, client);
          write_client(client->sock, buffer);
+      }
+      else if (strcmp(buffer, "observe") == 0)
+      {
+         if (handleObserver(client) == SOCKET_ERROR)
+            return SOCKET_ERROR;
       }
       else if (strcmp(buffer, "challenge") == 0)
       {
@@ -350,6 +378,84 @@ static int handleMenu(Client *client)
    return EXIT_SUCCESS;
 }
 
+static int handleObserver(Client *client)
+{
+   char buffer[BUF_SIZE];
+   while (1)
+   {
+      write_client(client->sock, "\nWho do you want to observe ?\n" RED "cancel" RESET " to cancel\n");
+      list_games(buffer);
+      write_client(client->sock, buffer);
+
+      buffer[0] = 0;
+      if (read_client(client->sock, buffer) <= 0)
+         return SOCKET_ERROR;
+      if (strcmp(buffer, "cancel") == 0)
+      {
+         break;
+      }
+      Client *observed = getClientByName(buffer);
+      char message[BUF_SIZE];
+      if (observed == NULL)
+      {
+         snprintf(message, BUF_SIZE, "\nPlayer " RED "%s" RESET " not found !\n", buffer);
+         write_client(client->sock, message);
+      }
+      else if (observed->game == NULL)
+      {
+         snprintf(message, BUF_SIZE, "\nPlayer " RED "%s" RESET " is not playing !\n", buffer);
+         write_client(client->sock, message);
+      }
+      else
+      {
+         client->game = observed->game;
+         snprintf(message, BUF_SIZE, "\nYou are now observing %s's game !\nType " RED "quit" RESET " to quit", observed->name);
+         write_client(client->sock, message);
+
+         while (client->game != NULL)
+         {
+            // Check for disconnect while waiting
+            char tempBuffer[BUF_SIZE];
+            tempBuffer[0] = 0;
+            if (!check_socket(client->sock, tempBuffer))
+            {
+               client->game = NULL;
+               return SOCKET_ERROR;
+            }
+            // If a game is created, it means the other accepted it
+            else if (strcmp(tempBuffer, "quit") == 0)
+            {
+               client->game = NULL;
+               return EXIT_SUCCESS;
+            }
+         }
+      }
+   }
+   return EXIT_SUCCESS;
+}
+
+static void send_message_to_all_observers(Game *game, const char *buffer)
+{
+   for (int i = 0; i < MAX_CLIENTS; i++)
+   {
+      if (clients[i] != NULL && clients[i]->game == game)
+      {
+         write_client(clients[i]->sock, buffer);
+      }
+   }
+}
+
+static void update_game_of_all_observers(Game *oldGame, Game *newGame)
+{
+   for (int i = 0; i < MAX_CLIENTS; i++)
+   {
+      if (clients[i] != NULL && clients[i]->game == oldGame)
+      {
+         clients[i]->game = newGame;
+      }
+   }
+}
+
 static int challengeClient(Client *challenger)
 {
    char buffer[BUF_SIZE];
@@ -409,8 +515,9 @@ static int challengeClient(Client *challenger)
    // Wait for the challengee to accept or refuse
    while (challenger->challengedBy != NULL)
    {
+      char tempBuffer[BUF_SIZE];
       // Check for disconnect while waiting
-      if (!check_socket(challenger->sock))
+      if (!check_socket(challenger->sock, tempBuffer))
       {
          return SOCKET_ERROR;
       }

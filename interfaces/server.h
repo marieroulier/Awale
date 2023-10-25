@@ -27,7 +27,6 @@ typedef struct in_addr IN_ADDR;
 #define PORT 1977
 #define MAX_CLIENTS 100
 #define MAX_THREADS 100
-#define MAX_GAMES MAX_CLIENTS / 2
 
 #define BUF_SIZE 1024
 
@@ -70,6 +69,9 @@ static void list_commands(Client *client);
 // Fills the buffer with the list of clients that are available for games.
 static void list_clients(char *buffer, Client *client);
 
+// Fills the buffer with the list of clients that are playing
+static void list_games(char *buffer);
+
 // Returns a pointer to the client with the given name.
 static Client *getClientByName(const char *name);
 
@@ -79,6 +81,15 @@ static void handleGame(Client *client);
 // Handles the client's menu.
 static int handleMenu(Client *client);
 
+// Handles the observer mode.
+static int handleObserver(Client *client);
+
+// Sends to all observers the message.
+static void send_message_to_all_observers(Game *game, const char *buffer);
+
+// Updates the game of all observers.
+static void update_game_of_all_observers(Game *oldGame, Game *newGame);
+
 // The client goes into challenger mode.
 static int challengeClient(Client *challenger);
 
@@ -86,7 +97,7 @@ static int challengeClient(Client *challenger);
 void *clientHandler(void *indexInClients);
 
 // Check if the socket is still alive, returns true if it is, false otherwise.
-static boolean check_socket(int sockFd);
+static boolean check_socket(int sockFd, char *tempBuffer);
 
 // Frees the memory allocated for one client at index i, and closes the connections.
 static void clear_client(int index);
