@@ -395,7 +395,7 @@ static int handleObserver(Client *client)
    char buffer[BUF_SIZE];
    while (1)
    {
-      write_client(client->sock, "\nWho do you want to observe ?\n" RED "cancel" RESET " to cancel\n");
+      write_client(client->sock, "\nWhose bio do you want to observe ?\n" RED "cancel" RESET " to cancel\n");
       list_games(buffer);
       write_client(client->sock, buffer);
 
