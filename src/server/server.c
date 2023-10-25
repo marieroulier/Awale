@@ -422,7 +422,6 @@ static int handleObserver(Client *client)
                client->game = NULL;
                return SOCKET_ERROR;
             }
-            // If a game is created, it means the other accepted it
             else if (strcmp(tempBuffer, "quit") == 0)
             {
                client->game = NULL;
