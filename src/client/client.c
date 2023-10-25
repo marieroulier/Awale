@@ -76,7 +76,7 @@ static void app(const char *address, const char *name)
          /* server down */
          if (n == 0)
          {
-            printf("Server disconnected !\n");
+            printf("Disconnected from server !\n");
             break;
          }
          puts(buffer);

@@ -8,14 +8,6 @@ Player *create_player()
     return player;
 }
 
-Player *create_player_with_client(Client *client)
-{
-    Player *player = create_player();
-    if (client != NULL)
-        client->isPlaying = TRUE;
-    return player;
-}
-
 Game *new_game(Player *player1, Player *player2)
 {
     Game *game = (Game *)malloc(sizeof(Game));
@@ -140,6 +132,11 @@ boolean is_valid_move(Pit pit, Game *game)
 void make_move(Game **gamePtr, Pit pit)
 {
     Game *game = *gamePtr;
+
+    // If move is done, it means it's not a tie
+    game->players[0]->tie = FALSE;
+    game->players[1]->tie = FALSE;
+
     int seeds = get_seeds(pit, game);
     game->board[pit.line][pit.column] = 0;
     int line = pit.line;
@@ -176,6 +173,7 @@ void make_move(Game **gamePtr, Pit pit)
         seeds--;
     }
     capture(gamePtr, (Pit){line, column});
+    game = *gamePtr;
     game->turn = get_opponent(game->turn, game);
 }
 

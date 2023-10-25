@@ -13,8 +13,8 @@ SERVER_PATH = $(SRC_PATH)/server
 GAME_PATH = $(SRC_PATH)/game
 INCLUDE_PATH = -I ./interfaces
 
-$(SERVER_EXE): $(SERVER_PATH)/server.c
-	$(COMPILER) -o $(BIN_PATH)/$(SERVER_EXE) $(SERVER_PATH)/server.c $(INCLUDE_PATH) $(DEBUG_FLAGS)
+$(SERVER_EXE): $(SERVER_PATH)/server.c display.o gameLogic.o
+	$(COMPILER) -o $(BIN_PATH)/$(SERVER_EXE) $(SERVER_PATH)/server.c $(BUILD_PATH)/display.o $(BUILD_PATH)/gameLogic.o $(INCLUDE_PATH) $(DEBUG_FLAGS)
 
 $(CLIENT_EXE): $(CLIENT_PATH)/client.c
 	$(COMPILER) -o $(BIN_PATH)/$(CLIENT_EXE) $(CLIENT_PATH)/client.c $(INCLUDE_PATH) $(DEBUG_FLAGS)
@@ -30,4 +30,4 @@ display.o: $(GAME_PATH)/display.c
 
 
 clean:
-	rm -rf $(BIN_PATH)/* $(BUILD_PATH)/*
+	rm -rf $(BIN_PATH)/* $(BUILD_PATH)/*.o
