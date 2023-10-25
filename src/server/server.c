@@ -292,20 +292,27 @@ static int handleMenu(Client *client)
       }
       else if (strcmp(buffer, "accept") == 0)
       {
-         write_client(client->sock, "\nYou accepted the challenge !\n" GREEN " Creating the game...\n" RESET);
+         if (client->challengedBy == NULL)
+         {
+            write_client(client->sock, "\nYou don't have any challenge to accept !\n");
+         }
+         else
+         {
+            write_client(client->sock, "\nYou accepted the challenge !\n" GREEN " Creating the game...\n" RESET);
 
-         Player *p1 = create_player();
-         Player *p2 = create_player();
-         Game *game = new_game(p1, p2);
-         client->game = game;
-         client->challengedBy->game = game;
-         client->player = p1;
-         client->challengedBy->player = p2;
+            Player *p1 = create_player();
+            Player *p2 = create_player();
+            Game *game = new_game(p1, p2);
+            client->game = game;
+            client->challengedBy->game = game;
+            client->player = p1;
+            client->challengedBy->player = p2;
 
-         char buffer[BUF_SIZE];
-         snprintf(buffer, BUF_SIZE, "\nGame created between P1 : %s and P2 : %s !\n", client->name, client->challengedBy->name);
-         write_client(client->sock, buffer);
-         write_client(client->challengedBy->sock, buffer);
+            char buffer[BUF_SIZE];
+            snprintf(buffer, BUF_SIZE, "\nGame created between P1 : %s and P2 : %s !\n", client->name, client->challengedBy->name);
+            write_client(client->sock, buffer);
+            write_client(client->challengedBy->sock, buffer);
+         }
       }
       else if (strcmp(buffer, "quit") == 0)
       {
