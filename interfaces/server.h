@@ -25,7 +25,6 @@ typedef struct in_addr IN_ADDR;
 
 #define CRLF "\r\n"
 #define PORT 1977
-#define MAX_CLIENTS 100
 #define MAX_THREADS 100
 
 #define BUF_SIZE 1024
@@ -69,8 +68,14 @@ static void list_commands(Client *client);
 // Fills the buffer with the list of clients that are available for games.
 static void list_clients(char *buffer, Client *client);
 
-// Fills the buffer with the list of clients that are playing
-static void list_games(char *buffer);
+// Fills the buffer with list of clients not friends with client.
+static void list_not_friends(char *buffer, Client *client);
+
+// Fills the buffer with the list of friends of client.
+static void list_friends(char *buffer, Client *client);
+
+// Fills the buffer with the list of games that the client can watch.
+static void list_games(char *buffer, Client *client);
 
 // Returns a pointer to the client with the given name.
 static Client *getClientByName(const char *name);
@@ -84,11 +89,17 @@ static int handleMenu(Client *client);
 // Handles the observer mode.
 static int handleObserver(Client *client);
 
+// Handles the friends mode.
+static int handleFriends(Client *client);
+
 // Handles the editing of the bio.
 static int handleBio(Client *client);
 
 // Handles the consulting of other bios.
 static int handleConsult(Client *client);
+
+// Checks if the client can watch the game of the observed client.
+static boolean canObserve(Client *observed, Client *client);
 
 // Sends to all observers the message.
 static void send_message_to_all_observers(Game *game, const char *buffer);
