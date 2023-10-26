@@ -121,11 +121,38 @@ static void list_commands(Client *client)
    strncat(buffer, "\t- " BLUE "accept" RESET " : accept a challenge\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "refuse" RESET " : refuse a challenge\n", BUF_SIZE - strlen(buffer) - 1);
    strncat(buffer, "\t- " BLUE "quit" RESET " : quit the game\n", BUF_SIZE - strlen(buffer) - 1);
-   strncat(buffer, "\t- " GREEN "any other command will be sent as a message chat" RESET, BUF_SIZE - strlen(buffer) - 1);
+   strncat(buffer, "\t- " GREEN "any other command will be sent as a message chat\n" RESET, BUF_SIZE - strlen(buffer) - 1);
    write_client(client->sock, buffer);
 }
 
 static void list_clients(char *buffer, Client *client)
+{
+   buffer[0] = 0;
+   strncat(buffer, "\nList of clients:\n", BUF_SIZE - strlen(buffer) - 1);
+   for (int i = 0; i < MAX_CLIENTS; i++)
+   {
+      if (clients[i] != NULL)
+      {
+         strncat(buffer, "\t- ", BUF_SIZE - strlen(buffer) - 1);
+         if (clients[i] == client)
+         {
+            strncat(buffer, GREEN, BUF_SIZE - strlen(buffer) - 1);
+            strncat(buffer, clients[i]->name, BUF_SIZE - strlen(buffer) - 1);
+            strncat(buffer, " (you)", BUF_SIZE - strlen(buffer) - 1);
+            strncat(buffer, RESET, BUF_SIZE - strlen(buffer) - 1);
+         }
+         else
+         {
+            strncat(buffer, clients[i]->name, BUF_SIZE - strlen(buffer) - 1);
+            if (clients[i]->game != NULL)
+               strncat(buffer, " (in game)", BUF_SIZE - strlen(buffer) - 1);
+         }
+         strncat(buffer, "\n", BUF_SIZE - strlen(buffer) - 1);
+      }
+   }
+}
+
+static void list_clients_not_in_game(char *buffer, Client *client)
 {
    buffer[0] = 0;
    strncat(buffer, "\nList of clients:\n", BUF_SIZE - strlen(buffer) - 1);
@@ -689,9 +716,18 @@ static int handleConsult(Client *client)
       }
       else
       {
-         snprintf(message, BUF_SIZE, "\n%s's bio :\n%s\n", consulted->name, consulted->bio);
-         write_client(client->sock, message);
-         break;
+         if (strcmp(consulted->bio, "") == 0)
+         {
+            snprintf(message, BUF_SIZE, "\n%s doesn't have a bio !\n", consulted->name);
+            write_client(client->sock, message);
+            break;
+         }
+         else
+         {
+            snprintf(message, BUF_SIZE, "\n%s's bio :\n%s\n", consulted->name, consulted->bio);
+            write_client(client->sock, message);
+            break;
+         }
       }
    }
    return EXIT_SUCCESS;
@@ -746,7 +782,7 @@ static int challengeClient(Client *challenger)
    while (1)
    {
       boolean isPrivate = FALSE;
-      write_client(challenger->sock, "Do you want to make a " RED "private" RESET " or " RED "public" RESET " challenge ?\n" RED "cancel" RESET " to cancel\n");
+      write_client(challenger->sock, "\nDo you want to make a " RED "private" RESET " or " RED "public" RESET " challenge ?\n" RED "cancel" RESET " to cancel\n");
       while (1)
       {
          buffer[0] = 0;
@@ -768,12 +804,12 @@ static int challengeClient(Client *challenger)
          }
          else
          {
-            write_client(challenger->sock, RED "Invalid input !\n" RESET "Enter" RED "private" RESET " or " RED "public" RESET "\n");
+            write_client(challenger->sock, RED "Invalid input !\n" RESET "Enter " RED "private" RESET " or " RED "public" RESET "\n");
          }
       }
 
       write_client(challenger->sock, "\nWho do you want to challenge ?\n" RED "cancel" RESET " to cancel\n");
-      list_clients(buffer, challenger);
+      list_clients_not_in_game(buffer, challenger);
       write_client(challenger->sock, buffer);
 
       buffer[0] = 0;

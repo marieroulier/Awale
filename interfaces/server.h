@@ -65,8 +65,11 @@ static int add_client(Client *client);
 // Lists the avaiblable commands
 static void list_commands(Client *client);
 
-// Fills the buffer with the list of clients that are available for games.
+// Fills the buffer with the list of all clients.
 static void list_clients(char *buffer, Client *client);
+
+// Fills the buffer with the list of clients that are available for games.
+static void list_clients_not_in_game(char *buffer, Client *client);
 
 // Fills the buffer with list of clients not friends with client.
 static void list_not_friends(char *buffer, Client *client);
