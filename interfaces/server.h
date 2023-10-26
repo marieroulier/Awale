@@ -71,14 +71,14 @@ static void list_clients(char *buffer, Client *client);
 // Fills the buffer with the list of clients that are available for games.
 static void list_clients_not_in_game(char *buffer, Client *client);
 
-// Fills the buffer with list of clients not friends with client.
-static void list_not_friends(char *buffer, Client *client);
+// Fills the buffer with list of clients not friends with client, and returns false if there is none, true otherwise.
+static boolean list_not_friends(char *buffer, Client *client);
 
-// Fills the buffer with the list of friends of client.
-static void list_friends(char *buffer, Client *client);
+// Fills the buffer with the list of friends of client, and returns false if there is none, true otherwise.
+static boolean list_friends(char *buffer, Client *client);
 
-// Fills the buffer with the list of games that the client can watch.
-static void list_games(char *buffer, Client *client);
+// Fills the buffer with the list of games that the client can watch, and returns false if there is none, true otherwise.
+static boolean list_games(char *buffer, Client *client);
 
 // Returns a pointer to the client with the given name.
 static Client *getClientByName(const char *name);

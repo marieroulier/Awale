@@ -178,9 +178,10 @@ static void list_clients_not_in_game(char *buffer, Client *client)
    }
 }
 
-static void list_not_friends(char *buffer, Client *client)
+static boolean list_not_friends(char *buffer, Client *client)
 {
    buffer[0] = 0;
+   boolean foundOne = FALSE;
    strncat(buffer, "\nList of clients not friends with you:\n", BUF_SIZE - strlen(buffer) - 1);
    for (int i = 0; i < MAX_CLIENTS; i++)
    {
@@ -201,32 +202,46 @@ static void list_not_friends(char *buffer, Client *client)
          }
          if (!isFriend)
          {
+            foundOne = TRUE;
             strncat(buffer, "\t- ", BUF_SIZE - strlen(buffer) - 1);
             strncat(buffer, clients[i]->name, BUF_SIZE - strlen(buffer) - 1);
             strncat(buffer, "\n", BUF_SIZE - strlen(buffer) - 1);
          }
       }
    }
+   if (!foundOne)
+   {
+      strncat(buffer, RED "None\n" RESET, BUF_SIZE - strlen(buffer) - 1);
+   }
+   return foundOne;
 }
 
-static void list_friends(char *buffer, Client *client)
+static boolean list_friends(char *buffer, Client *client)
 {
    buffer[0] = 0;
+   boolean foundOne = FALSE;
    strncat(buffer, "\nList of friends:\n", BUF_SIZE - strlen(buffer) - 1);
    for (int i = 0; i < MAX_FRIENDS; i++)
    {
       if (client->friends[i] != NULL)
       {
+         foundOne = TRUE;
          strncat(buffer, "\t- ", BUF_SIZE - strlen(buffer) - 1);
          strncat(buffer, client->friends[i]->name, BUF_SIZE - strlen(buffer) - 1);
          strncat(buffer, "\n", BUF_SIZE - strlen(buffer) - 1);
       }
    }
+   if (!foundOne)
+   {
+      strncat(buffer, RED "None\n" RESET, BUF_SIZE - strlen(buffer) - 1);
+   }
+   return foundOne;
 }
 
-static void list_games(char *buffer, Client *client)
+static boolean list_games(char *buffer, Client *client)
 {
    buffer[0] = 0;
+   boolean foundOne = FALSE;
    strncat(buffer, "\nList of games:\n", BUF_SIZE - strlen(buffer) - 1);
    for (int i = 0; i < MAX_CLIENTS; i++)
    {
@@ -234,6 +249,7 @@ static void list_games(char *buffer, Client *client)
       {
          if (canObserve(clients[i], client))
          {
+            foundOne = TRUE;
             strncat(buffer, "\t- ", BUF_SIZE - strlen(buffer) - 1);
             strncat(buffer, clients[i]->name, BUF_SIZE - strlen(buffer) - 1);
             strncat(buffer, " (P1)" RED " VS " RESET, BUF_SIZE - strlen(buffer) - 1);
@@ -242,6 +258,11 @@ static void list_games(char *buffer, Client *client)
          }
       }
    }
+   if (!foundOne)
+   {
+      strncat(buffer, RED "No game available\n" RESET, BUF_SIZE - strlen(buffer) - 1);
+   }
+   return foundOne;
 }
 
 static Client *getClientByName(const char *name)
@@ -476,8 +497,12 @@ static int handleObserver(Client *client)
    char buffer[BUF_SIZE];
    while (1)
    {
+      if (!list_games(buffer, client))
+      {
+         write_client(client->sock, "\nThere is no game available to observe !\n");
+         break;
+      }
       write_client(client->sock, "\nWhose game do you want to observe ?\n" RED "cancel" RESET " to cancel\n");
-      list_games(buffer, client);
       write_client(client->sock, buffer);
 
       buffer[0] = 0;
@@ -540,7 +565,7 @@ static int handleFriends(Client *client)
    char buffer[BUF_SIZE];
    while (1)
    {
-      write_client(client->sock, "\nWhat do you want to do ?\n" RED "cancel" RESET " to cancel\n");
+      write_client(client->sock, "\nWhat do you want to do ?\n" RED "cancel" RESET " to cancel\n\n");
       write_client(client->sock, "\t- " BLUE "add" RESET " : add a friend\n");
       write_client(client->sock, "\t- " BLUE "remove" RESET " : remove a friend\n");
       write_client(client->sock, "\t- " BLUE "list" RESET " : list your friends\n");
@@ -554,8 +579,12 @@ static int handleFriends(Client *client)
       }
       else if (strcmp(buffer, "add") == 0)
       {
+         if (!list_not_friends(buffer, client))
+         {
+            write_client(client->sock, "\nThere is no player available to add !\n");
+            continue;
+         }
          write_client(client->sock, "\nWho do you want to add ?\n" RED "cancel" RESET " to cancel\n");
-         list_not_friends(buffer, client);
          write_client(client->sock, buffer);
 
          buffer[0] = 0;
@@ -563,7 +592,7 @@ static int handleFriends(Client *client)
             return SOCKET_ERROR;
          if (strcmp(buffer, "cancel") == 0)
          {
-            break;
+            continue;
          }
          Client *friend = getClientByName(buffer);
          char message[BUF_SIZE];
@@ -609,8 +638,12 @@ static int handleFriends(Client *client)
       }
       else if (strcmp(buffer, "remove") == 0)
       {
+         if (!list_friends(buffer, client))
+         {
+            write_client(client->sock, "\nYou don't have any friends to remove !\n");
+            continue;
+         }
          write_client(client->sock, "\nWho do you want to remove ?\n" RED "cancel" RESET " to cancel\n");
-         list_friends(buffer, client);
          write_client(client->sock, buffer);
 
          buffer[0] = 0;
@@ -618,7 +651,7 @@ static int handleFriends(Client *client)
             return SOCKET_ERROR;
          if (strcmp(buffer, "cancel") == 0)
          {
-            break;
+            continue;
          }
          Client *friend = getClientByName(buffer);
          char message[BUF_SIZE];
@@ -779,6 +812,7 @@ static void update_game_of_all_observers(Game *oldGame, Game *newGame)
 static int challengeClient(Client *challenger)
 {
    char buffer[BUF_SIZE];
+   char list[BUF_SIZE];
    while (1)
    {
       boolean isPrivate = FALSE;
