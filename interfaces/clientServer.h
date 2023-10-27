@@ -4,6 +4,9 @@
 #define BUF_SIZE 1024
 #define BIO_SIZE 256
 
+#define MAX_CLIENTS 100
+#define MAX_FRIENDS MAX_CLIENTS - 1
+
 typedef int SOCKET;
 typedef int boolean;
 
@@ -15,6 +18,8 @@ typedef struct _Client
    char bio[BIO_SIZE];
    Game *game;
    Player *player;
+   boolean isPrivate;
+   struct _Client *friends[MAX_FRIENDS];
    struct _Client *challengedBy;
 } Client;
 
