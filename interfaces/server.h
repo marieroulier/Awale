@@ -101,11 +101,14 @@ static int handleBio(Client *client);
 // Handles the consulting of other bios.
 static int handleConsult(Client *client);
 
+// Send chat message to all observers.
+static void send_chat_message_to_all_observers(Client *client, const char *buffer, const char *color);
+
 // Checks if the client can watch the game of the observed client.
 static boolean canObserve(Client *observed, Client *client);
 
 // Sends to all observers the message.
-static void send_message_to_all_observers(Game *game, const char *buffer);
+static void send_message_to_all_observers(Game *game, const char *buffer, Client *except);
 
 // Updates the game of all observers.
 static void update_game_of_all_observers(Game *oldGame, Game *newGame);

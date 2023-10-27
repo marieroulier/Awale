@@ -287,11 +287,19 @@ static void handleGame(Client *client)
       while (game != NULL && game->turn != NULL && game->turn == client->challengedBy->player)
       {
          char tempBuffer[BUF_SIZE];
+         tempBuffer[0] = 0;
+         char message[BUF_SIZE];
+         message[0] = 0;
+
          // Checks for disconnect and absorbs all inputs while waiting for the other player
          if (!check_socket(client->sock, tempBuffer))
          {
             quit = TRUE;
             break;
+         }
+         else if (strlen(tempBuffer) > 0)
+         {
+            send_chat_message_to_all_observers(client, tempBuffer, client->player == game->players[0] ? GREEN : PURPLE);
          }
       }
       // Pointer to game may have changed in the other thread
@@ -302,12 +310,12 @@ static void handleGame(Client *client)
          break;
       }
 
-      write_client(client->sock, "\n" RED "It's your turn !\n" RESET "Type " PURPLE "tie" RESET " to tie\n");
+      write_client(client->sock, "\n" RED "It's your turn !\n" RESET "Type " PURPLE "tie" RESET " to tie\n" BLUE "Type anything else to send it to your opponent and the observers\n" RESET);
       char *nameP1 = client->player == game->players[0] ? client->name : client->challengedBy->name;
       char *nameP2 = client->player == game->players[1] ? client->name : client->challengedBy->name;
       construct_board(game, buffer, nameP1, nameP2);
 
-      send_message_to_all_observers(game, buffer);
+      send_message_to_all_observers(game, buffer, NULL);
 
       // Check if the game and the socket are still alive
       if (client->game == NULL || read_client(client->sock, buffer) <= 0)
@@ -331,7 +339,7 @@ static void handleGame(Client *client)
          // Check if conversion was successful
          else if (caseNumber == 0)
          {
-            write_client(client->sock, RED "Bad input, please write a number.\n" RESET);
+            send_chat_message_to_all_observers(client, buffer, client->player == game->players[0] ? GREEN : PURPLE);
          }
          else if (get_pit(caseNumber, &pit) && is_valid_move(pit, game))
          {
@@ -340,7 +348,7 @@ static void handleGame(Client *client)
             update_game_of_all_observers(game, client->game);
             game = client->game;
 
-            write_client(client->sock, "\nMove done !\nWait for your turn...\n");
+            write_client(client->sock, "\nMove done !\nWait for your turn...\nAny message " BLUE "typed will be sent to your opponent" RESET " and the observers.\n");
          }
          else
          {
@@ -352,7 +360,7 @@ static void handleGame(Client *client)
          {
             construct_board(game, buffer, nameP1, nameP2);
 
-            send_message_to_all_observers(game, buffer);
+            send_message_to_all_observers(game, buffer, NULL);
 
             Player *winner = get_winner(game);
             if (winner != NULL)
@@ -360,7 +368,7 @@ static void handleGame(Client *client)
                char message[BUF_SIZE];
                snprintf(message, BUF_SIZE, BLUE "\nPlayer %d won !\n" RESET, winner == game->players[0] ? 1 : 2);
 
-               send_message_to_all_observers(game, message);
+               send_message_to_all_observers(game, message, NULL);
 
                if (winner == client->player)
                {
@@ -375,7 +383,7 @@ static void handleGame(Client *client)
             }
             else
             {
-               send_message_to_all_observers(game, BLUE "\nIt's a tie !\n" RESET);
+               send_message_to_all_observers(game, BLUE "\nIt's a tie !\n" RESET, NULL);
             }
 
             update_game_of_all_observers(game, NULL);
@@ -553,6 +561,10 @@ static int handleObserver(Client *client)
             {
                client->game = NULL;
                return EXIT_SUCCESS;
+            }
+            else if (strlen(tempBuffer) > 0)
+            {
+               send_chat_message_to_all_observers(client, tempBuffer, BLUE);
             }
          }
       }
@@ -766,6 +778,20 @@ static int handleConsult(Client *client)
    return EXIT_SUCCESS;
 }
 
+static void send_chat_message_to_all_observers(Client *client, const char *buffer, const char *color)
+{
+   char message[BUF_SIZE];
+   message[0] = 0;
+   strncat(message, "\n", BUF_SIZE - strlen(message) - 1);
+   strncat(message, color, BUF_SIZE - strlen(message) - 1);
+   strncat(message, client->name, BUF_SIZE - strlen(message) - 1);
+   strncat(message, " : ", BUF_SIZE - strlen(message) - 1);
+   strncat(message, buffer, BUF_SIZE - strlen(message) - 1);
+   strncat(message, "\n", BUF_SIZE - strlen(message) - 1);
+   strncat(message, RESET, BUF_SIZE - strlen(message) - 1);
+   send_message_to_all_observers(client->game, message, NULL);
+}
+
 static boolean canObserve(Client *observed, Client *client)
 {
    boolean canWatch = FALSE;
@@ -787,11 +813,11 @@ static boolean canObserve(Client *observed, Client *client)
    return canWatch;
 }
 
-static void send_message_to_all_observers(Game *game, const char *buffer)
+static void send_message_to_all_observers(Game *game, const char *buffer, Client *except)
 {
    for (int i = 0; i < MAX_CLIENTS; i++)
    {
-      if (clients[i] != NULL && clients[i]->game == game)
+      if (clients[i] != NULL && clients[i]->game == game && clients[i] != except)
       {
          write_client(clients[i]->sock, buffer);
       }
@@ -1036,11 +1062,11 @@ static void clear_client(int index)
    {
       char message[BUF_SIZE];
       snprintf(message, BUF_SIZE, "By forfeit," GREEN " %s won the game !\n" RESET, clients[index]->challengedBy->name);
-      write_client(clients[index]->challengedBy->sock, message);
+      send_message_to_all_observers(clients[index]->game, message, NULL);
       free_player(clients[index]->game->players[0]);
       free_player(clients[index]->game->players[1]);
       free_game(clients[index]->game);
-      clients[index]->challengedBy->game = NULL;
+      update_game_of_all_observers(clients[index]->game, NULL);
       clients[index]->player = NULL;
       clients[index]->challengedBy->player = NULL;
    }
